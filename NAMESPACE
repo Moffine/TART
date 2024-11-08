@@ -1,0 +1,5 @@
+useDynLib(TART, .registration=TRUE)
+import(Rcpp, RcppArmadillo)
+exportPattern("^[[:alpha:]]+")
+export(ART_KF)
+export(TART_KF)
