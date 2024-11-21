@@ -27,7 +27,7 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-List TART_KF(arma :: vec a1, arma :: mat P1, arma :: mat T, arma :: cube Z, arma :: mat Q, arma :: mat H, arma :: mat y, double lambda_init = 0.0, int S = 3, double beta1 = 0.9, double beta2 = 0.999, double eta = 0.002, int c_e = 100, int c_F = 5, double d_F = 1.0, double delta_AR = 1e-8, double delta_g = 0.01, double delta_v = 1e-8) {
+List TART_KF(arma :: vec a1, arma :: mat P1, arma :: cube T, arma :: cube Z, arma :: cube Q, arma :: cube H, arma :: mat y, double lambda_init = 0.0, int S = 3, double beta1 = 0.9, double beta2 = 0.999, double eta = 0.002, int c_e = 100, int c_F = 5, double d_F = 1.0, double delta_AR = 1e-8, double delta_g = 0.01, double delta_v = 1e-8) {
   int N = y.n_cols;
   int d = y.n_rows;
   int p = a1.n_elem;
@@ -62,32 +62,44 @@ List TART_KF(arma :: vec a1, arma :: mat P1, arma :: mat T, arma :: cube Z, arma
   arma :: vec all_update;
   
   vt_ART.col(0) = y.col(0) - Z.slice(0) * at_ART.col(0);
-  
+
+  int n_T = T.n_slices;
+  int n_Z = Z.n_slices;
+  int n_Q = Q.n_slices;
+  int n_H = H.n_slices;
+
   for (int t = 0; t < N; t++){
+    arma :: mat Tt = T.slice(t % n_T);
+    arma :: mat Zt = Z.slice(t % n_Z);
+    arma :: mat Zt_1 = Z.slice( (t+1) % n_Z);
+    arma :: mat Qt = Q.slice(t % n_Q);
+    arma :: mat Ht = H.slice(t % n_H);
+    
     arma :: mat Pt_inv = inv(Pt.slice(t));
-    arma :: mat A = trans(Z.slice(t)) * inv(H) * Z.slice(t) + Pt_inv;
-    arma :: mat K = Pt.slice(t) * trans(Z.slice(t)) * inv( Z.slice(t) * Pt.slice(t) * trans(Z.slice(t)) + H );
+    arma :: mat Ht_inv = inv(Ht);
+    arma :: mat A = trans(Zt) * Ht_inv * Zt + Pt_inv;
+    arma :: mat K = Pt.slice(t) * trans(Zt) * inv( Zt * Pt.slice(t) * trans(Zt) + Ht );
     
-    att.col(t) = at.col(t) + K * (y.col(t) - Z.slice(t) * at.col(t));
-    at.col(t+1) = T * att.col(t);
+    att.col(t) = at.col(t) + K * (y.col(t) - Zt * at.col(t));
+    at.col(t+1) = Tt * att.col(t);
     
-    Ptt.slice(t) = Pt.slice(t) - K * ( Z.slice(t) * Pt.slice(t) * trans(Z.slice(t)) + H ) * trans(K);
-    Pt.slice(t+1) = T * Ptt.slice(t) * trans(T) + Q;
+    Ptt.slice(t) = Pt.slice(t) - K * ( Zt * Pt.slice(t) * trans(Zt) + Ht ) * trans(K);
+    Pt.slice(t+1) = Tt * Ptt.slice(t) * trans(Tt) + Qt;
     
-    arma :: vec tmp = trans(Z.slice(t)) * inv(H) * y.col(t) + Pt_inv * at_ART.col(t);
+    arma :: vec tmp = trans(Zt) * Ht_inv * y.col(t) + Pt_inv * at_ART.col(t);
     att_ART.col(t) = inv( A + lambda * eye(p, p)) * tmp;
     for (int i = 0; i < S; i++){
       arma :: mat D = diagmat( lambda/(square(att_ART.col(t)) + delta_AR) );
       att_ART.col(t) = inv( A + D) * tmp;
     }
-    at_ART.col(t+1) = T * att_ART.col(t);
+    at_ART.col(t+1) = Tt * att_ART.col(t);
     
     if(t == N-1){
       break;
     }
     
-    vt_ART.col(t+1) = y.col(t+1) - Z.slice(t+1) * at_ART.col(t+1);
-    arma :: vec vt_KF = y.col(t+1) - Z.slice(t+1) * at.col(t+1);
+    vt_ART.col(t+1) = y.col(t+1) - Zt_1 * at_ART.col(t+1);
+    arma :: vec vt_KF = y.col(t+1) - Zt_1 * at.col(t+1);
     SFE0_ART.col(t+1) = square( vt_ART.col(t+1) );
     
     arma :: mat M = diagmat(1 / (mean(SFE0_ART.submat(0,std::max(0,t-c_e),d-1,t+1),1) + delta_AR )  );
@@ -113,8 +125,8 @@ List TART_KF(arma :: vec a1, arma :: mat P1, arma :: mat T, arma :: cube Z, arma
       arma :: mat D = diagmat( lambda_up/(square(att_ART_up) + delta_AR) );
       att_ART_up = inv( A + D) * tmp;
     }
-    arma :: vec at_ART_up = T * att_ART_up;
-    arma :: vec e_up = y.col(t+1) - Z.slice(t+1) * at_ART_up;
+    arma :: vec at_ART_up = Tt * att_ART_up;
+    arma :: vec e_up = y.col(t+1) - Zt_1 * at_ART_up;
     double SFE_up = as_scalar(trans(e_up) * M * e_up)/d;
     
     double lambda_down = std::max(0.0,lambda - delta_g);
@@ -123,8 +135,8 @@ List TART_KF(arma :: vec a1, arma :: mat P1, arma :: mat T, arma :: cube Z, arma
       arma :: mat D = diagmat( lambda_down/(square(att_ART_down) + delta_AR) );
       att_ART_down = inv( A + D) * tmp;
     }
-    arma :: vec at_ART_down = T * att_ART_down;
-    arma :: vec e_down = y.col(t+1) - Z.slice(t+1) * at_ART_down;
+    arma :: vec at_ART_down = Tt * att_ART_down;
+    arma :: vec e_down = y.col(t+1) - Zt_1 * at_ART_down;
     double SFE_down = as_scalar(trans(e_down) * M * e_down)/d;
       
     double G_lambda = (SFE_up - SFE_down) / (lambda_up-lambda_down);

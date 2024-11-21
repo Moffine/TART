@@ -12,17 +12,17 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // ART_KF
-List ART_KF(arma :: vec a1, arma :: mat P1, arma :: mat T, arma :: cube Z, arma :: mat Q, arma :: mat H, arma :: mat y, double lambda, int S, double delta_AR);
+List ART_KF(arma :: vec a1, arma :: mat P1, arma :: cube T, arma :: cube Z, arma :: cube Q, arma :: cube H, arma :: mat y, double lambda, int S, double delta_AR);
 RcppExport SEXP _TART_ART_KF(SEXP a1SEXP, SEXP P1SEXP, SEXP TSEXP, SEXP ZSEXP, SEXP QSEXP, SEXP HSEXP, SEXP ySEXP, SEXP lambdaSEXP, SEXP SSEXP, SEXP delta_ARSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma :: vec >::type a1(a1SEXP);
     Rcpp::traits::input_parameter< arma :: mat >::type P1(P1SEXP);
-    Rcpp::traits::input_parameter< arma :: mat >::type T(TSEXP);
+    Rcpp::traits::input_parameter< arma :: cube >::type T(TSEXP);
     Rcpp::traits::input_parameter< arma :: cube >::type Z(ZSEXP);
-    Rcpp::traits::input_parameter< arma :: mat >::type Q(QSEXP);
-    Rcpp::traits::input_parameter< arma :: mat >::type H(HSEXP);
+    Rcpp::traits::input_parameter< arma :: cube >::type Q(QSEXP);
+    Rcpp::traits::input_parameter< arma :: cube >::type H(HSEXP);
     Rcpp::traits::input_parameter< arma :: mat >::type y(ySEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< int >::type S(SSEXP);
@@ -32,17 +32,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // TART_KF
-List TART_KF(arma :: vec a1, arma :: mat P1, arma :: mat T, arma :: cube Z, arma :: mat Q, arma :: mat H, arma :: mat y, double lambda_init, int S, double beta1, double beta2, double eta, int c_e, int c_F, double d_F, double delta_AR, double delta_g, double delta_v);
+List TART_KF(arma :: vec a1, arma :: mat P1, arma :: cube T, arma :: cube Z, arma :: cube Q, arma :: cube H, arma :: mat y, double lambda_init, int S, double beta1, double beta2, double eta, int c_e, int c_F, double d_F, double delta_AR, double delta_g, double delta_v);
 RcppExport SEXP _TART_TART_KF(SEXP a1SEXP, SEXP P1SEXP, SEXP TSEXP, SEXP ZSEXP, SEXP QSEXP, SEXP HSEXP, SEXP ySEXP, SEXP lambda_initSEXP, SEXP SSEXP, SEXP beta1SEXP, SEXP beta2SEXP, SEXP etaSEXP, SEXP c_eSEXP, SEXP c_FSEXP, SEXP d_FSEXP, SEXP delta_ARSEXP, SEXP delta_gSEXP, SEXP delta_vSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma :: vec >::type a1(a1SEXP);
     Rcpp::traits::input_parameter< arma :: mat >::type P1(P1SEXP);
-    Rcpp::traits::input_parameter< arma :: mat >::type T(TSEXP);
+    Rcpp::traits::input_parameter< arma :: cube >::type T(TSEXP);
     Rcpp::traits::input_parameter< arma :: cube >::type Z(ZSEXP);
-    Rcpp::traits::input_parameter< arma :: mat >::type Q(QSEXP);
-    Rcpp::traits::input_parameter< arma :: mat >::type H(HSEXP);
+    Rcpp::traits::input_parameter< arma :: cube >::type Q(QSEXP);
+    Rcpp::traits::input_parameter< arma :: cube >::type H(HSEXP);
     Rcpp::traits::input_parameter< arma :: mat >::type y(ySEXP);
     Rcpp::traits::input_parameter< double >::type lambda_init(lambda_initSEXP);
     Rcpp::traits::input_parameter< int >::type S(SSEXP);

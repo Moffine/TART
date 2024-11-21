@@ -14,11 +14,10 @@ for(t in 1:N){
   y[t] <- alpha[t] + rnorm(1,0,1)
 }
 
-T <- matrix(1,1,1)
-Z <- array(1,dim=c(1,1,N))
-Q <- matrix(0.0001,1,1)
-
-H <- matrix(1,1,1)
+T <- array(1,dim=c(1,1,1))
+Z <- array(1,dim=c(1,1,1))
+Q <- array(0.0001,dim=c(1,1,1))
+H <- array(1,dim=c(1,1,1))
 
 #############estimate state variable (alpha) by ART-KF#######################
 res_ART <- TART::ART_KF(a1=rep(0,1), P1=matrix(1,1,1)*1000, T = T, Z = Z, Q = Q, H = H, y = matrix(y,1,N), lambda=0.1)
