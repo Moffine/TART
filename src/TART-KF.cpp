@@ -6,18 +6,18 @@ using namespace Rcpp;
 
 //' Estimating state vector by TART Kalman filter
 //' 
-//' @param a1 mean of initial state vector
-//' @param P1 covariance matrix of initial state vector
-//' @param T transition matrix of state vector
-//' @param Z transition matrix of state vector
-//' @param Q covariance matrix of state noise vector
-//' @param H covariance matrix of observation noise vector
-//' @param y observation vectors
+//' @param a1 p * 1 mean of initial state vector
+//' @param P1 p * p covariance matrix of initial state vector
+//' @param T p * p * n (or p * p * n_T, if T has an n_T cycle) array giving transition matrix in state equation for each time
+//' @param Z d * p * n (or p * p * n_Z, if Z has an n_Z cycle) array giving transition matrix in observation equation for each time
+//' @param Sigma_eta p * p * n (or p * p * n_Sigma_eta, if Sigma_eta has an n_Sigma_eta cycle) array giving covariance matrix of state noise vector for each time
+//' @param Sigma_epsilon d * d * n (or d * d * n_Sigma_epsilon, if Sigma_epsilon has an n_Sigma_epsilon cycle) array giving covariance matrix of observation noise vector for each time
+//' @param y d * n observation vector for each time
 //' @param lambda_init initial regularization parameter of adaptive ridge
 //' @param S number of times to perform ridge estimation in adaptive ridge
 //' @param beta1 parameter of Adam
 //' @param beta2 parameter of Adam
-//' @param eta learning rate of Adam
+//' @param gamma learning rate of Adam
 //' @param c_e interval over which the average is taken for M_t in TART-KF
 //' @param c_F interval over which the average is taken for F_t in TART-KF
 //' @param d_F rate of lambda control by Kalman filter
@@ -27,7 +27,7 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-List TART_KF(arma :: vec a1, arma :: mat P1, arma :: cube T, arma :: cube Z, arma :: cube Q, arma :: cube H, arma :: mat y, double lambda_init = 0.0, int S = 3, double beta1 = 0.9, double beta2 = 0.999, double eta = 0.002, int c_e = 100, int c_F = 5, double d_F = 1.0, double delta_AR = 1e-8, double delta_g = 0.01, double delta_v = 1e-8) {
+List TART_KF(arma :: vec a1, arma :: mat P1, arma :: cube T, arma :: cube Z, arma :: cube Sigma_eta, arma :: cube Sigma_epsilon, arma :: mat y, double lambda_init = 0.0, int S = 3, double beta1 = 0.9, double beta2 = 0.999, double gamma = 0.002, int c_e = 100, int c_F = 5, double d_F = 1.0, double delta_AR = 1e-8, double delta_g = 0.01, double delta_v = 1e-8) {
   int N = y.n_cols;
   int d = y.n_rows;
   int p = a1.n_elem;
@@ -65,28 +65,28 @@ List TART_KF(arma :: vec a1, arma :: mat P1, arma :: cube T, arma :: cube Z, arm
 
   int n_T = T.n_slices;
   int n_Z = Z.n_slices;
-  int n_Q = Q.n_slices;
-  int n_H = H.n_slices;
+  int n_Sigma_eta = Sigma_eta.n_slices;
+  int n_Sigma_epsilon = Sigma_epsilon.n_slices;
 
   for (int t = 0; t < N; t++){
     arma :: mat Tt = T.slice(t % n_T);
     arma :: mat Zt = Z.slice(t % n_Z);
     arma :: mat Zt_1 = Z.slice( (t+1) % n_Z);
-    arma :: mat Qt = Q.slice(t % n_Q);
-    arma :: mat Ht = H.slice(t % n_H);
+    arma :: mat Sigma_etat = Sigma_eta.slice(t % n_Sigma_eta);
+    arma :: mat Sigma_epsilont = Sigma_epsilon.slice(t % n_Sigma_epsilon);
     
     arma :: mat Pt_inv = inv(Pt.slice(t));
-    arma :: mat Ht_inv = inv(Ht);
-    arma :: mat A = trans(Zt) * Ht_inv * Zt + Pt_inv;
-    arma :: mat K = Pt.slice(t) * trans(Zt) * inv( Zt * Pt.slice(t) * trans(Zt) + Ht );
+    arma :: mat Sigma_epsilont_inv = inv(Sigma_epsilont);
+    arma :: mat A = trans(Zt) * Sigma_epsilont_inv * Zt + Pt_inv;
+    arma :: mat K = Pt.slice(t) * trans(Zt) * inv( Zt * Pt.slice(t) * trans(Zt) + Sigma_epsilont );
     
     att.col(t) = at.col(t) + K * (y.col(t) - Zt * at.col(t));
     at.col(t+1) = Tt * att.col(t);
     
-    Ptt.slice(t) = Pt.slice(t) - K * ( Zt * Pt.slice(t) * trans(Zt) + Ht ) * trans(K);
-    Pt.slice(t+1) = Tt * Ptt.slice(t) * trans(Tt) + Qt;
+    Ptt.slice(t) = Pt.slice(t) - K * ( Zt * Pt.slice(t) * trans(Zt) + Sigma_epsilont ) * trans(K);
+    Pt.slice(t+1) = Tt * Ptt.slice(t) * trans(Tt) + Sigma_etat;
     
-    arma :: vec tmp = trans(Zt) * Ht_inv * y.col(t) + Pt_inv * at_ART.col(t);
+    arma :: vec tmp = trans(Zt) * Sigma_epsilont_inv * y.col(t) + Pt_inv * at_ART.col(t);
     att_ART.col(t) = inv( A + lambda * eye(p, p)) * tmp;
     for (int i = 0; i < S; i++){
       arma :: mat D = diagmat( lambda/(square(att_ART.col(t)) + delta_AR) );
@@ -146,7 +146,7 @@ List TART_KF(arma :: vec a1, arma :: mat P1, arma :: cube T, arma :: cube Z, arm
     double moment1_hat = moment1/(1-std::pow(beta1,t+1) );
     double moment2_hat = moment2/(1-std::pow(beta2,t+1) );
         
-    double update = eta*moment1_hat/(std::sqrt(moment2_hat) + delta_v );
+    double update = gamma*moment1_hat/(std::sqrt(moment2_hat) + delta_v );
     lambda = lambda - update;
     lambda = std::max(0.0,lambda);
 

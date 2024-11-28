@@ -16,18 +16,18 @@ for(t in 1:N){
 
 T <- array(1,dim=c(1,1,1))
 Z <- array(1,dim=c(1,1,1))
-Q <- array(0.0001,dim=c(1,1,1))
-H <- array(1,dim=c(1,1,1))
+Sigma_eta <- array(0.0001,dim=c(1,1,1))
+Sigma_epsilon <- array(1,dim=c(1,1,1))
 
 #############estimate state variable (alpha) by ART-KF#######################
-res_ART <- TART::ART_KF(a1=rep(0,1), P1=matrix(1,1,1)*1000, T = T, Z = Z, Q = Q, H = H, y = matrix(y,1,N), lambda=0.1)
+res_ART <- TART::ART_KF(a1=rep(0,1), P1=matrix(1,1,1)*1000, T = T, Z = Z, Sigma_eta = Sigma_eta, Sigma_epsilon = Sigma_epsilon, y = matrix(y,1,N), lambda=0.1)
 
 plot(y, type="l",lwd=1,cex.axis = 1.5,xlab="",ylab="") #plot of observations(black line)
 lines(res_ART$att[,1:N], type="l",lwd=3,col="red") #plot of estimates of ART_KF(red line)
 lines(alpha, lwd=2,col="green", type="l",lty=2) #plot of true state variables(green line)
 
 #############estimate state variable (alpha) by TART-KF######################
-res_TART <- TART::TART_KF(a1=rep(0,1), P1=matrix(1,1,1)*1000, T = T, Z = Z, Q = Q, H = H, y = matrix(y,1,N) )
+res_TART <- TART::TART_KF(a1=rep(0,1), P1=matrix(1,1,1)*1000, T = T, Z = Z, Sigma_eta = Sigma_eta, Sigma_epsilon = Sigma_epsilon, y = matrix(y,1,N) )
 
 plot(y, type="l",lwd=1,cex.axis = 1.5,xlab="",ylab="") #plot of observations(black line)
 lines(res_TART$att[,1:N], type="l",lwd=3,col="red") #plot of estimates of TART_KF(red line)

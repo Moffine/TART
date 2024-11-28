@@ -4,22 +4,33 @@
 \alias{ART_KF}
 \title{Estimating state vector by ART Kalman filter}
 \usage{
-ART_KF(a1, P1, T, Z, Q, H, y, lambda, S = 3L, delta_AR = 1e-08)
+ART_KF(
+  a1,
+  P1,
+  T,
+  Z,
+  Sigma_eta,
+  Sigma_epsilon,
+  y,
+  lambda,
+  S = 3L,
+  delta_AR = 1e-08
+)
 }
 \arguments{
-\item{a1}{mean of initial state vector}
+\item{a1}{p * 1 mean of initial state vector}
 
-\item{P1}{covariance matrix of initial state vector}
+\item{P1}{p * p covariance matrix of initial state vector}
 
-\item{T}{transition matrix of state vector}
+\item{T}{p * p * n (or p * p * n_T, if T has an n_T cycle) array giving transition matrix in state equation for each time}
 
-\item{Z}{transition matrix of state vector}
+\item{Z}{d * p * n (or p * p * n_Z, if Z has an n_Z cycle) array giving transition matrix in observation equation for each time}
 
-\item{Q}{covariance matrix of state noise vector}
+\item{Sigma_eta}{p * p * n (or p * p * n_Sigma_eta, if Sigma_eta has an n_Sigma_eta cycle) array giving covariance matrix of state noise vector for each time}
 
-\item{H}{covariance matrix of observation noise vector}
+\item{Sigma_epsilon}{d * d * n (or d * d * n_Sigma_epsilon, if Sigma_epsilon has an n_Sigma_epsilon cycle) array giving covariance matrix of observation noise vector for each time}
 
-\item{y}{observation vectors}
+\item{y}{d * n observation vector for each time}
 
 \item{lambda}{regularization parameter of adaptive ridge}
 

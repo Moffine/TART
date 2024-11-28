@@ -3,36 +3,36 @@
 
 #' Estimating state vector by ART Kalman filter
 #' 
-#' @param a1 mean of initial state vector
-#' @param P1 covariance matrix of initial state vector
-#' @param T transition matrix of state vector
-#' @param Z transition matrix of state vector
-#' @param Q covariance matrix of state noise vector
-#' @param H covariance matrix of observation noise vector
-#' @param y observation vectors
+#' @param a1 p * 1 mean of initial state vector
+#' @param P1 p * p covariance matrix of initial state vector
+#' @param T p * p * n (or p * p * n_T, if T has an n_T cycle) array giving transition matrix in state equation for each time
+#' @param Z d * p * n (or p * p * n_Z, if Z has an n_Z cycle) array giving transition matrix in observation equation for each time
+#' @param Sigma_eta p * p * n (or p * p * n_Sigma_eta, if Sigma_eta has an n_Sigma_eta cycle) array giving covariance matrix of state noise vector for each time
+#' @param Sigma_epsilon d * d * n (or d * d * n_Sigma_epsilon, if Sigma_epsilon has an n_Sigma_epsilon cycle) array giving covariance matrix of observation noise vector for each time
+#' @param y d * n observation vector for each time
 #' @param lambda regularization parameter of adaptive ridge
 #' @param S number of times to perform ridge estimation in adaptive ridge
 #' @param delta_AR small value to prevent dividing by 0 in adaptive ridge
 #'
 #' @export
-ART_KF <- function(a1, P1, T, Z, Q, H, y, lambda, S = 3L, delta_AR = 1e-8) {
-    .Call(`_TART_ART_KF`, a1, P1, T, Z, Q, H, y, lambda, S, delta_AR)
+ART_KF <- function(a1, P1, T, Z, Sigma_eta, Sigma_epsilon, y, lambda, S = 3L, delta_AR = 1e-8) {
+    .Call(`_TART_ART_KF`, a1, P1, T, Z, Sigma_eta, Sigma_epsilon, y, lambda, S, delta_AR)
 }
 
 #' Estimating state vector by TART Kalman filter
 #' 
-#' @param a1 mean of initial state vector
-#' @param P1 covariance matrix of initial state vector
-#' @param T transition matrix of state vector
-#' @param Z transition matrix of state vector
-#' @param Q covariance matrix of state noise vector
-#' @param H covariance matrix of observation noise vector
-#' @param y observation vectors
+#' @param a1 p * 1 mean of initial state vector
+#' @param P1 p * p covariance matrix of initial state vector
+#' @param T p * p * n (or p * p * n_T, if T has an n_T cycle) array giving transition matrix in state equation for each time
+#' @param Z d * p * n (or p * p * n_Z, if Z has an n_Z cycle) array giving transition matrix in observation equation for each time
+#' @param Sigma_eta p * p * n (or p * p * n_Sigma_eta, if Sigma_eta has an n_Sigma_eta cycle) array giving covariance matrix of state noise vector for each time
+#' @param Sigma_epsilon d * d * n (or d * d * n_Sigma_epsilon, if Sigma_epsilon has an n_Sigma_epsilon cycle) array giving covariance matrix of observation noise vector for each time
+#' @param y d * n observation vector for each time
 #' @param lambda_init initial regularization parameter of adaptive ridge
 #' @param S number of times to perform ridge estimation in adaptive ridge
 #' @param beta1 parameter of Adam
 #' @param beta2 parameter of Adam
-#' @param eta learning rate of Adam
+#' @param gamma learning rate of Adam
 #' @param c_e interval over which the average is taken for M_t in TART-KF
 #' @param c_F interval over which the average is taken for F_t in TART-KF
 #' @param d_F rate of lambda control by Kalman filter
@@ -41,7 +41,7 @@ ART_KF <- function(a1, P1, T, Z, Q, H, y, lambda, S = 3L, delta_AR = 1e-8) {
 #' @param delta_v small value to prevent dividing by 0 in Adam
 #'
 #' @export
-TART_KF <- function(a1, P1, T, Z, Q, H, y, lambda_init = 0.0, S = 3L, beta1 = 0.9, beta2 = 0.999, eta = 0.002, c_e = 100L, c_F = 5L, d_F = 1.0, delta_AR = 1e-8, delta_g = 0.01, delta_v = 1e-8) {
-    .Call(`_TART_TART_KF`, a1, P1, T, Z, Q, H, y, lambda_init, S, beta1, beta2, eta, c_e, c_F, d_F, delta_AR, delta_g, delta_v)
+TART_KF <- function(a1, P1, T, Z, Sigma_eta, Sigma_epsilon, y, lambda_init = 0.0, S = 3L, beta1 = 0.9, beta2 = 0.999, gamma = 0.002, c_e = 100L, c_F = 5L, d_F = 1.0, delta_AR = 1e-8, delta_g = 0.01, delta_v = 1e-8) {
+    .Call(`_TART_TART_KF`, a1, P1, T, Z, Sigma_eta, Sigma_epsilon, y, lambda_init, S, beta1, beta2, gamma, c_e, c_F, d_F, delta_AR, delta_g, delta_v)
 }
 
